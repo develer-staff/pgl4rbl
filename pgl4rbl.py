@@ -51,6 +51,7 @@ def query_rbl(ip, rbl_root):
         return None
 
 def check_rbls(ip):
+    """True if the IP is listed in RBLs"""
     return any(query_rbl(ip, r) for r in RBLS)
 
 def check_db(ip):

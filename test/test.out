@@ -1,6 +1,6 @@
-action=permit You are cleared to land
+action=ok You are cleared to land
 
-action=permit You are cleared to land
+action=ok You are cleared to land
 
 action=defer Are you a spammer? If not, just retry!
 

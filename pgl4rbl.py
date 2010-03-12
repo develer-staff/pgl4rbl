@@ -1,13 +1,5 @@
 #!/usr/bin/env python
 
-# RBL to check
-RBLS = [
-    "xbl.spamhaus.org",
-    "pbl.spamhaus.org",
-    "dnsbl.njabl.org",
-    "dnsbl.sorbs.net",
-]
-
 # Directory where to store the greylist DB
 GREYLIST_DB = "/tmp/pgl4rbl"
 
@@ -21,6 +13,13 @@ LOGGING = True
 # Facility to send logging to
 SYSLOG_FACILITY = 'LOG_MAIL'
 
+# RBLs to check
+RBLS = [
+    "xbl.spamhaus.org",
+    "pbl.spamhaus.org",
+    "dnsbl.njabl.org",
+    "dnsbl.sorbs.net",
+]
 
 
 ########################################################################################

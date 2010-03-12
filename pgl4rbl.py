@@ -21,6 +21,8 @@ RBLS = [
     "dnsbl.sorbs.net",
 ]
 
+# HELO FQDN enforcement checks
+CHECK_BAD_HELO = True
 
 ########################################################################################
 # Program begins here
@@ -31,6 +33,7 @@ import socket
 import syslog
 import signal
 import os
+import re
 import stat
 import time
 
@@ -53,6 +56,27 @@ def check_rbls(ip):
     """True if the IP is listed in RBLs"""
     return any(query_rbl(ip, r) for r in RBLS)
 
+rxIP = re.compile(r"\[(\d+)\.(\d+)\.(\d+)\.(\d+)\]")
+def check_badhelo(helo):
+    """True if the HELO string violates the RFC"""
+    if not CHECK_BAD_HELO:
+        return False
+
+    if helo.startswith('['):
+        m = rxIP.match(helo)
+        if m is not None:
+            octs = map(int, (m.group(1), m.group(2), m.group(3), m.group(4)))
+            if max(octs) < 256:
+                return False
+        log("HELO string begins with '[' but does not contain a valid IPv4 address")
+        return True
+
+    if '.' not in helo:
+        log("HELO string does not look like a FQDN")
+        return True
+
+    return False
+
 def check_db(ip):
     """
     Check if ip is in the GL database.
@@ -73,9 +97,10 @@ def add_db(ip):
 def clean_db(ip):
     os.remove(GREYLIST_DB + '/' + ip)
 
-def process_ip(ip):
-    if not check_rbls(ip):
-        return "permit Not in RBL"
+def process_ip(ip, helo):
+    if not check_rbls(ip) and not check_badhelo(helo):
+        return "permit You are cleared to land"
+
     t = check_db(ip)
     if t < 0:
         log("%s not in greylist DB, adding it" % ip)
@@ -103,17 +128,19 @@ def process_one():
         d[k.strip()] = v.strip()
 
     try:
-        ip = d['client_address']    
+        ip = d['client_address']
+        helo = d['helo_name']
     except KeyError:
-        error("client_address field not found in input data, aborting")
+        error("client_address/helo_name field not found in input data, aborting")
         sys.exit(2)
 
     if not ip:
         error("client_address empty in input data, aborting")
         sys.exit(2)
 
-    log("Processing client IP: %s" % ip)
-    action = process_ip(ip)
+    log("Processing client: S:%s H:%s" % (ip, helo))
+    action = process_ip(ip, helo)
+
     log("Action for IP %s: %s" % (ip, action))
     sys.stdout.write('action=%s\n\n' % action)
 

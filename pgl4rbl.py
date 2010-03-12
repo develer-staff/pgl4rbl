@@ -99,7 +99,7 @@ def clean_db(ip):
 
 def process_ip(ip, helo):
     if not check_rbls(ip) and not check_badhelo(helo):
-        return "permit You are cleared to land"
+        return "ok You are cleared to land"
 
     t = check_db(ip)
     if t < 0:
@@ -111,7 +111,7 @@ def process_ip(ip, helo):
         return "defer Are you a spammer? If not, just retry!"
     else:
         log("%s already present greylist DB" % ip)
-        return "permit Greylisting OK"
+        return "ok Greylisting OK"
 
 
 def process_one():

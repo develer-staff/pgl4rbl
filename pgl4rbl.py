@@ -11,7 +11,7 @@ RBLS = [
 # Directory where to store the greylist DB
 GREYLIST_DB = '/tmp/gl4rbl'
 
-# Minimum time (in seconds) before an entry in the DB is allowed 
+# Minimum time (in seconds) before an entry in the DB is allowed
 # to resend a message
 MIN_GREYLIST_TIME = 5*60
 
@@ -65,7 +65,7 @@ def check_db(ip):
     except OSError:
         return -1
     return time.time() - s.st_mtime
-    
+
 def add_db(ip):
     """Add the specified IP to the GL database"""
     open(GREYLIST_DB + '/' + ip, "w").close()
@@ -87,6 +87,7 @@ def process_ip(ip):
     else:
         log("%s already present greylist DB" % ip)
         return "permit Greylisting OK"
+
 
 def process_one():
     d = {}
@@ -118,7 +119,7 @@ def process_one():
 
 if __name__ == "__main__":
 
-    # Allow SIGPIPE to kill our program 
+    # Allow SIGPIPE to kill our program
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
     # Configure syslog support
@@ -141,4 +142,3 @@ if __name__ == "__main__":
 
     while 1:
         process_one()
-

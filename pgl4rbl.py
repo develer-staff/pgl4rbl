@@ -9,7 +9,7 @@ RBLS = [
 ]
 
 # Directory where to store the greylist DB
-GREYLIST_DB = '/tmp/gl4rbl'
+GREYLIST_DB = "/tmp/pgl4rbl"
 
 # Minimum time (in seconds) before an entry in the DB is allowed
 # to resend a message

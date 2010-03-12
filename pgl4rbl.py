@@ -70,6 +70,9 @@ def add_db(ip):
     """Add the specified IP to the GL database"""
     open(GREYLIST_DB + '/' + ip, "w").close()
 
+def clean_db(ip):
+    os.remove(GREYLIST_DB + '/' + ip)
+
 def process_ip(ip):
     if not check_rbls(ip):
         return "permit Not in RBL"
@@ -131,7 +134,7 @@ if __name__ == "__main__":
         test_fn = ".test.%s" % os.getpid()
         add_db(test_fn)
         check_db(test_fn)
-        os.remove(test_fn)
+        clean_db(test_fn)
     except OSError:
         error("Wrong permissions for DB directory: " + GREYLIST_DB)
         sys.exit(2)

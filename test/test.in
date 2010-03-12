@@ -1,0 +1,15 @@
+client_address=89.97.188.34
+helo_name=trinity.develer.com
+
+client_address=8.8.8.8
+helo_name=dns1.google.com
+
+client_address=8.8.8.8
+helo_name=google
+
+client_address=89.97.188.34
+helo_name=[ciao]
+
+client_address=89.97.188.34
+helo_name=[255.256.1024.12]
+

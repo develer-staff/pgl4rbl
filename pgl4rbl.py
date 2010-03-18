@@ -185,7 +185,7 @@ if __name__ == "__main__":
         add_db(test_fn)
         check_db(test_fn)
         clean_db(test_fn)
-    except OSError:
+    except (OSError,IOError):
         error("Wrong permissions for DB directory: " + GREYLIST_DB)
         sys.exit(2)
 

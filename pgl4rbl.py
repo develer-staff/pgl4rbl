@@ -172,7 +172,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
     # Configure syslog support
-    syslog.openlog("gl4rbl", syslog.LOG_PID, getattr(syslog, SYSLOG_FACILITY))
+    syslog.openlog("pgl4rbl", syslog.LOG_PID, getattr(syslog, SYSLOG_FACILITY))
 
     # Check that we can access the DB directory
     if not os.path.isdir(GREYLIST_DB):

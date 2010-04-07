@@ -22,34 +22,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-# Directory where to store the greylist DB
-GREYLIST_DB = "/tmp/pgl4rbl"
-
-# Minimum time (in seconds) before an entry in the DB is allowed
-# to resend a message
-MIN_GREYLIST_TIME = 5*60
-
-# Activate/disactivate logging (through syslog)
-LOGGING = True
-
-# Facility to send logging to
-SYSLOG_FACILITY = 'LOG_MAIL'
-
-# RBLs to check
-RBLS = [
-    "xbl.spamhaus.org",
-    "pbl.spamhaus.org",
-    "dnsbl.njabl.org",
-    "dnsbl.sorbs.net",
-]
-
-# HELO FQDN enforcement checks
-CHECK_BAD_HELO = True
-
-########################################################################################
-# Program begins here
-########################################################################################
-
 import sys
 import socket
 import syslog
@@ -170,6 +142,18 @@ if __name__ == "__main__":
 
     # Allow SIGPIPE to kill our program
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+    if len(sys.argv) > 1:
+        conf = sys.argv[1]
+    else:
+        conf = "/etc/mail/pgl4rbl.conf"
+
+    try:
+        execfile(conf)
+    except Exception, e:
+        syslog.openlog("pgl4rbl", syslog.LOG_PID)
+        error("Error parsing configuration: %s" % e)
+        sys.exit(2)
 
     # Configure syslog support
     syslog.openlog("pgl4rbl", syslog.LOG_PID, getattr(syslog, SYSLOG_FACILITY))

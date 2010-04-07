@@ -143,6 +143,12 @@ if __name__ == "__main__":
     # Allow SIGPIPE to kill our program
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
+    if len(sys.argv) > 1 and sys.argv[0] == "--clean":
+        mode = "CLEAN"
+        del sys.argv[1]
+    else:
+        mode = "RUN"
+
     if len(sys.argv) > 1:
         conf = sys.argv[1]
     else:
@@ -173,6 +179,8 @@ if __name__ == "__main__":
         error("Wrong permissions for DB directory: " + GREYLIST_DB)
         sys.exit(2)
 
-    while 1:
+    if mode == "CLEAN":
+        os.system("find '%s' -type f -mmin +%d -delete" % (GREYLIST_DB, MAX_GREYLIST_TIME))
+    else:
         process_one()
 

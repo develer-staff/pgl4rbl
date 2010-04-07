@@ -42,9 +42,12 @@ def query_rbl(ip, rbl_root):
     check_name = ".".join(addr_parts)
     log("Querying: %s" % check_name)
     try:
-        return socket.gethostbyname(check_name)
+        ip = socket.gethostbyname(check_name)
     except socket.error:
         return None
+    else:
+        log("Found in blacklist %s (resolved to %s)" % (rbl_root, ip))
+        return ip
 
 def check_rbls(ip):
     """True if the IP is listed in RBLs"""

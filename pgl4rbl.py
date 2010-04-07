@@ -100,7 +100,7 @@ def process_ip(ip, helo):
         log("%s not in greylist DB, adding it" % ip)
         add_db(ip)
         return "defer Are you a spammer? If not, just retry!"
-    elif t < MIN_GREYLIST_TIME:
+    elif t < MIN_GREYLIST_TIME*60:
         log("%s too young in greylist DB" % ip)
         return "defer Are you a spammer? If not, just retry!"
     else:

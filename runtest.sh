@@ -8,6 +8,6 @@ fi
 
 find $GREYLIST_DB -type f -exec rm {} \;
 
-python pgl4rbl.py < test/test.in > /tmp/test.out.$$
+python pgl4rbl.py pgl4rbl.conf < test/test.in > /tmp/test.out.$$
 diff test/test.out /tmp/test.out.$$
 

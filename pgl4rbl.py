@@ -40,7 +40,6 @@ def error(s):
 def query_rbl(ip, rbl_root):
     addr_parts = list(reversed(ip.split('.'))) + [rbl_root]
     check_name = ".".join(addr_parts)
-    log("Querying: %s" % check_name)
     try:
         ip = socket.gethostbyname(check_name)
     except socket.error:
@@ -146,7 +145,7 @@ if __name__ == "__main__":
     # Allow SIGPIPE to kill our program
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-    if len(sys.argv) > 1 and sys.argv[0] == "--clean":
+    if len(sys.argv) > 1 and sys.argv[1] == "--clean":
         mode = "CLEAN"
         del sys.argv[1]
     else:

@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/develersrl/pgl4rbl.svg?branch=master)](https://travis-ci.org/develersrl/pgl4rbl)
 [![Coverage Status](http://img.shields.io/coveralls/develersrl/pgl4rbl.svg)](https://coveralls.io/r/develersrl/pgl4rbl)
 
-This package implements a Postfix policy server that mixes two widely used techniques: greylisting and RBL (DNS blacklists). The idea is that greylisting is applied only to SMTP clients that match a RBL; this means that normal clients are not delayed (such as with a normal greylisting implementation), and RBL false positives do not cause problems (like when outright blocking them at the SMTP level).
+This package implements a Postfix policy server that mixes two widely used techniques: greylisting and RBL (DNS blacklists). The idea is that SMTP clients that match a RBL get greylisted. Normal clients are not delayed (unlike a normal greylisting implementation), and RBL false positives do not cause problems (like when outright blocking them at the SMTP level).
 
 More information can be found in this [blog post](http://giovanni.bajo.it/post/47121521214/grey-on-black-combining-greylisting-with-blacklists).
 

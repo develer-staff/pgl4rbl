@@ -25,6 +25,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+import argparse
 import os
 import re
 import signal
@@ -42,19 +43,10 @@ def main():
     # Allow SIGPIPE to kill our program
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-    if len(sys.argv) > 1 and sys.argv[1] == "--clean":
-        mode = "CLEAN"
-        del sys.argv[1]
-    else:
-        mode = "RUN"
-
-    if len(sys.argv) > 1:
-        conf = sys.argv[1]
-    else:
-        conf = "/etc/mail/pgl4rbl.conf"
+    args = parse_args()
 
     try:
-        execfile(conf)
+        execfile(args.conf, globals())
     except Exception, e:
         syslog.openlog("pgl4rbl", syslog.LOG_PID)
         error("Error parsing configuration: %s" % e)
@@ -79,11 +71,19 @@ def main():
         error("Wrong permissions for DB directory: " + GREYLIST_DB)
         sys.exit(2)
 
-    if mode == "CLEAN":
+    if args.clean:
         os.system("find '%s' -type f -mmin +%d -delete" %
                   (GREYLIST_DB, MAX_GREYLIST_TIME))
     else:
         process_one()
+
+
+def parse_args():
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument("-c", "--config", type=str, default="/etc/pgl4rbl.conf", help="path to the configuration file")
+    arg_parser.add_argument("-d", "--clean", action="store_true", help="clean the greylist db")
+
+    return arg_parser.parse_args()
 
 
 def log(s):

@@ -45,16 +45,38 @@ def main():
 
     args = parse_args()
 
+    load_config_file(args.config)
+
+    # Configure syslog support
+    syslog.openlog("pgl4rbl", syslog.LOG_PID, getattr(syslog, SYSLOG_FACILITY))
+
+    sanity_check()
+
+    if args.clean:
+        os.system("find '%s' -type f -mmin +%d -delete" %
+                  (GREYLIST_DB, MAX_GREYLIST_TIME))
+    else:
+        process_one()
+
+
+def parse_args():
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument("-c", "--config", type=str, default="/etc/pgl4rbl.conf", help="path to the configuration file")
+    arg_parser.add_argument("-d", "--clean", action="store_true", help="clean the greylist db")
+
+    return arg_parser.parse_args()
+
+
+def load_config_file(config):
     try:
-        execfile(args.conf, globals())
+        execfile(config, globals())
     except Exception, e:
         syslog.openlog("pgl4rbl", syslog.LOG_PID)
         error("Error parsing configuration: %s" % e)
         sys.exit(2)
 
-    # Configure syslog support
-    syslog.openlog("pgl4rbl", syslog.LOG_PID, getattr(syslog, SYSLOG_FACILITY))
 
+def sanity_check():
     # Check that we can access the DB directory
     if not os.path.isdir(GREYLIST_DB):
         error("DB directory does not exist: " + GREYLIST_DB)
@@ -70,20 +92,6 @@ def main():
     except (OSError, IOError):
         error("Wrong permissions for DB directory: " + GREYLIST_DB)
         sys.exit(2)
-
-    if args.clean:
-        os.system("find '%s' -type f -mmin +%d -delete" %
-                  (GREYLIST_DB, MAX_GREYLIST_TIME))
-    else:
-        process_one()
-
-
-def parse_args():
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("-c", "--config", type=str, default="/etc/pgl4rbl.conf", help="path to the configuration file")
-    arg_parser.add_argument("-d", "--clean", action="store_true", help="clean the greylist db")
-
-    return arg_parser.parse_args()
 
 
 def log(s):

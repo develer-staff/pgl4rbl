@@ -71,6 +71,7 @@ def load_config_file(config):
     try:
         execfile(config, globals())
     except Exception, e:
+        # We can't use die() here
         syslog.openlog("pgl4rbl", syslog.LOG_PID)
         error("Error parsing configuration: %s" % e)
         sys.exit(2)
@@ -79,8 +80,7 @@ def load_config_file(config):
 def sanity_check():
     # Check that we can access the DB directory
     if not os.path.isdir(GREYLIST_DB):
-        error("DB directory does not exist: " + GREYLIST_DB)
-        sys.exit(2)
+        die("DB directory does not exist: " + GREYLIST_DB)
 
     # Check that permissions allow access to the DB directory
     try:
@@ -90,12 +90,16 @@ def sanity_check():
         check_db(test_fn)
         clean_db(test_fn)
     except (OSError, IOError):
-        error("Wrong permissions for DB directory: " + GREYLIST_DB)
-        sys.exit(2)
+        die("Wrong permissions for DB directory: " + GREYLIST_DB)
 
 
 def log(s):
     syslog.syslog(syslog.LOG_INFO, s)
+
+
+def die(s):
+    error(s)
+    sys.exit(2)
 
 
 def error(s):
@@ -114,8 +118,7 @@ def process_one():
         try:
             k, v = L.split('=', 1)
         except ValueError:
-            error("invalid input line: %r" % L)
-            sys.exit(2)
+            die("invalid input line: %r" % L)
 
         d[k.strip()] = v.strip()
 
@@ -123,14 +126,10 @@ def process_one():
         ip = d['client_address']
         helo = d['helo_name']
     except KeyError:
-        error("client_address/helo_name field not found in input data, aborting")
-
-        sys.exit(2)
+        die("client_address/helo_name field not found in input data, aborting")
 
     if not ip:
-        error("client_address empty in input data, aborting")
-
-        sys.exit(2)
+        die("client_address empty in input data, aborting")
 
     log("Processing client: S:%s H:%s" % (ip, helo))
 

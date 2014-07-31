@@ -49,12 +49,14 @@ def error(s):
 def query_rbl(ip, rbl_root):
     addr_parts = list(reversed(ip.split('.'))) + [rbl_root]
     check_name = ".".join(addr_parts)
+
     try:
         ip = socket.gethostbyname(check_name)
     except socket.error:
         return None
     else:
         log("Found in blacklist %s (resolved to %s)" % (rbl_root, ip))
+
         return ip
 
 
@@ -70,16 +72,20 @@ def check_badhelo(helo):
 
     if helo.startswith('['):
         m = RE_IP.match(helo)
+
         if m is not None:
             octs = map(int, (m.group(1), m.group(2), m.group(3), m.group(4)))
+
             if max(octs) < 256:
                 return False
-        log(
-            "HELO string begins with '[' but does not contain a valid IPv4 address")
+
+        log("HELO string begins with '[' but does not contain a valid IPv4 address")
+
         return True
 
     if '.' not in helo:
         log("HELO string does not look like a FQDN")
+
         return True
 
     return False
@@ -92,10 +98,12 @@ def check_db(ip):
     since it has been added.
     """
     fn = GREYLIST_DB + '/' + ip
+
     try:
         s = os.stat(fn)
     except OSError:
         return -1
+
     return time.time() - s.st_mtime
 
 
@@ -113,23 +121,30 @@ def process_ip(ip, helo):
         return "ok You are cleared to land"
 
     t = check_db(ip)
+
     if t < 0:
         log("%s not in greylist DB, adding it" % ip)
+
         add_db(ip)
+
         return "defer Are you a spammer? If not, just retry!"
     elif t < MIN_GREYLIST_TIME * 60:
         log("%s too young in greylist DB" % ip)
+
         return "defer Are you a spammer? If not, just retry!"
     else:
         log("%s already present greylist DB" % ip)
+
         return "ok Greylisting OK"
 
 
 def process_one():
     d = {}
+
     while 1:
         L = sys.stdin.readline()
         L = L.strip()
+
         if not L:
             break
         try:
@@ -137,21 +152,24 @@ def process_one():
         except ValueError:
             error("invalid input line: %r" % L)
             sys.exit(2)
+
         d[k.strip()] = v.strip()
 
     try:
         ip = d['client_address']
         helo = d['helo_name']
     except KeyError:
-        error(
-            "client_address/helo_name field not found in input data, aborting")
+        error("client_address/helo_name field not found in input data, aborting")
+
         sys.exit(2)
 
     if not ip:
         error("client_address empty in input data, aborting")
+
         sys.exit(2)
 
     log("Processing client: S:%s H:%s" % (ip, helo))
+
     action = process_ip(ip, helo)
 
     log("Action for IP %s: %s" % (ip, action))
@@ -191,6 +209,7 @@ if __name__ == "__main__":
     # Check that permissions allow access to the DB directory
     try:
         test_fn = ".test.%s" % os.getpid()
+
         add_db(test_fn)
         check_db(test_fn)
         clean_db(test_fn)

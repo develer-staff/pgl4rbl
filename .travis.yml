@@ -1,0 +1,7 @@
+language: python
+python:
+  - "2.7"
+install: "pip install -r requirements-dev.txt"
+script: py.test --cov pgl4rbl
+after_success:
+  - coveralls

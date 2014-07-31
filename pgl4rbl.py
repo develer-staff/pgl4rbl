@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Copyright (c) 2010, Develer Srl
 #
 # Permission is hereby granted, free of charge, to any person

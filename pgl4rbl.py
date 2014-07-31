@@ -38,12 +38,125 @@ import time
 RE_IP = re.compile(r"\[(\d+)\.(\d+)\.(\d+)\.(\d+)\]")
 
 
+def main():
+    # Allow SIGPIPE to kill our program
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+    if len(sys.argv) > 1 and sys.argv[1] == "--clean":
+        mode = "CLEAN"
+        del sys.argv[1]
+    else:
+        mode = "RUN"
+
+    if len(sys.argv) > 1:
+        conf = sys.argv[1]
+    else:
+        conf = "/etc/mail/pgl4rbl.conf"
+
+    try:
+        execfile(conf)
+    except Exception, e:
+        syslog.openlog("pgl4rbl", syslog.LOG_PID)
+        error("Error parsing configuration: %s" % e)
+        sys.exit(2)
+
+    # Configure syslog support
+    syslog.openlog("pgl4rbl", syslog.LOG_PID, getattr(syslog, SYSLOG_FACILITY))
+
+    # Check that we can access the DB directory
+    if not os.path.isdir(GREYLIST_DB):
+        error("DB directory does not exist: " + GREYLIST_DB)
+        sys.exit(2)
+
+    # Check that permissions allow access to the DB directory
+    try:
+        test_fn = ".test.%s" % os.getpid()
+
+        add_db(test_fn)
+        check_db(test_fn)
+        clean_db(test_fn)
+    except (OSError, IOError):
+        error("Wrong permissions for DB directory: " + GREYLIST_DB)
+        sys.exit(2)
+
+    if mode == "CLEAN":
+        os.system("find '%s' -type f -mmin +%d -delete" %
+                  (GREYLIST_DB, MAX_GREYLIST_TIME))
+    else:
+        process_one()
+
+
 def log(s):
     syslog.syslog(syslog.LOG_INFO, s)
 
 
 def error(s):
     syslog.syslog(syslog.LOG_ERR, s)
+
+
+def process_one():
+    d = {}
+
+    while 1:
+        L = sys.stdin.readline()
+        L = L.strip()
+
+        if not L:
+            break
+        try:
+            k, v = L.split('=', 1)
+        except ValueError:
+            error("invalid input line: %r" % L)
+            sys.exit(2)
+
+        d[k.strip()] = v.strip()
+
+    try:
+        ip = d['client_address']
+        helo = d['helo_name']
+    except KeyError:
+        error("client_address/helo_name field not found in input data, aborting")
+
+        sys.exit(2)
+
+    if not ip:
+        error("client_address empty in input data, aborting")
+
+        sys.exit(2)
+
+    log("Processing client: S:%s H:%s" % (ip, helo))
+
+    action = process_ip(ip, helo)
+
+    log("Action for IP %s: %s" % (ip, action))
+    sys.stdout.write('action=%s\n\n' % action)
+
+
+def process_ip(ip, helo):
+    if not check_rbls(ip) and not check_badhelo(helo):
+        return "ok You are cleared to land"
+
+    t = check_db(ip)
+
+    if t < 0:
+        log("%s not in greylist DB, adding it" % ip)
+
+        add_db(ip)
+
+        return "defer Are you a spammer? If not, just retry!"
+    elif t < MIN_GREYLIST_TIME * 60:
+        log("%s too young in greylist DB" % ip)
+
+        return "defer Are you a spammer? If not, just retry!"
+    else:
+        log("%s already present greylist DB" % ip)
+
+        return "ok Greylisting OK"
+
+
+def check_rbls(ip):
+    """True if the IP is listed in RBLs"""
+    return any(query_rbl(ip, r) for r in RBLS)
 
 
 def query_rbl(ip, rbl_root):
@@ -58,11 +171,6 @@ def query_rbl(ip, rbl_root):
         log("Found in blacklist %s (resolved to %s)" % (rbl_root, ip))
 
         return ip
-
-
-def check_rbls(ip):
-    """True if the IP is listed in RBLs"""
-    return any(query_rbl(ip, r) for r in RBLS)
 
 
 def check_badhelo(helo):
@@ -116,109 +224,5 @@ def clean_db(ip):
     os.remove(GREYLIST_DB + '/' + ip)
 
 
-def process_ip(ip, helo):
-    if not check_rbls(ip) and not check_badhelo(helo):
-        return "ok You are cleared to land"
-
-    t = check_db(ip)
-
-    if t < 0:
-        log("%s not in greylist DB, adding it" % ip)
-
-        add_db(ip)
-
-        return "defer Are you a spammer? If not, just retry!"
-    elif t < MIN_GREYLIST_TIME * 60:
-        log("%s too young in greylist DB" % ip)
-
-        return "defer Are you a spammer? If not, just retry!"
-    else:
-        log("%s already present greylist DB" % ip)
-
-        return "ok Greylisting OK"
-
-
-def process_one():
-    d = {}
-
-    while 1:
-        L = sys.stdin.readline()
-        L = L.strip()
-
-        if not L:
-            break
-        try:
-            k, v = L.split('=', 1)
-        except ValueError:
-            error("invalid input line: %r" % L)
-            sys.exit(2)
-
-        d[k.strip()] = v.strip()
-
-    try:
-        ip = d['client_address']
-        helo = d['helo_name']
-    except KeyError:
-        error("client_address/helo_name field not found in input data, aborting")
-
-        sys.exit(2)
-
-    if not ip:
-        error("client_address empty in input data, aborting")
-
-        sys.exit(2)
-
-    log("Processing client: S:%s H:%s" % (ip, helo))
-
-    action = process_ip(ip, helo)
-
-    log("Action for IP %s: %s" % (ip, action))
-    sys.stdout.write('action=%s\n\n' % action)
-
-
 if __name__ == "__main__":
-    # Allow SIGPIPE to kill our program
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
-    if len(sys.argv) > 1 and sys.argv[1] == "--clean":
-        mode = "CLEAN"
-        del sys.argv[1]
-    else:
-        mode = "RUN"
-
-    if len(sys.argv) > 1:
-        conf = sys.argv[1]
-    else:
-        conf = "/etc/mail/pgl4rbl.conf"
-
-    try:
-        execfile(conf)
-    except Exception, e:
-        syslog.openlog("pgl4rbl", syslog.LOG_PID)
-        error("Error parsing configuration: %s" % e)
-        sys.exit(2)
-
-    # Configure syslog support
-    syslog.openlog("pgl4rbl", syslog.LOG_PID, getattr(syslog, SYSLOG_FACILITY))
-
-    # Check that we can access the DB directory
-    if not os.path.isdir(GREYLIST_DB):
-        error("DB directory does not exist: " + GREYLIST_DB)
-        sys.exit(2)
-
-    # Check that permissions allow access to the DB directory
-    try:
-        test_fn = ".test.%s" % os.getpid()
-
-        add_db(test_fn)
-        check_db(test_fn)
-        clean_db(test_fn)
-    except (OSError, IOError):
-        error("Wrong permissions for DB directory: " + GREYLIST_DB)
-        sys.exit(2)
-
-    if mode == "CLEAN":
-        os.system("find '%s' -type f -mmin +%d -delete" %
-                  (GREYLIST_DB, MAX_GREYLIST_TIME))
-    else:
-        process_one()
+    main()

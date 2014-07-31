@@ -35,6 +35,9 @@ import syslog
 import time
 
 
+RE_IP = re.compile(r"\[(\d+)\.(\d+)\.(\d+)\.(\d+)\]")
+
+
 def log(s):
     syslog.syslog(syslog.LOG_INFO, s)
 
@@ -59,8 +62,6 @@ def check_rbls(ip):
     """True if the IP is listed in RBLs"""
     return any(query_rbl(ip, r) for r in RBLS)
 
-rxIP = re.compile(r"\[(\d+)\.(\d+)\.(\d+)\.(\d+)\]")
-
 
 def check_badhelo(helo):
     """True if the HELO string violates the RFC"""
@@ -68,7 +69,7 @@ def check_badhelo(helo):
         return False
 
     if helo.startswith('['):
-        m = rxIP.match(helo)
+        m = RE_IP.match(helo)
         if m is not None:
             octs = map(int, (m.group(1), m.group(2), m.group(3), m.group(4)))
             if max(octs) < 256:

@@ -27,6 +27,7 @@
 
 import argparse
 import os
+import os.path
 import re
 import signal
 import socket
@@ -212,7 +213,7 @@ def check_db(ip):
     Returns -1 if not present, or the number of seconds
     since it has been added.
     """
-    fn = GREYLIST_DB + '/' + ip
+    fn = os.path.join(GREYLIST_DB, ip)
 
     try:
         s = os.stat(fn)
@@ -224,11 +225,11 @@ def check_db(ip):
 
 def add_db(ip):
     """Add the specified IP to the GL database"""
-    open(GREYLIST_DB + '/' + ip, "w").close()
+    open(os.path.join(GREYLIST_DB, ip), "w").close()
 
 
 def clean_db(ip):
-    os.remove(GREYLIST_DB + '/' + ip)
+    os.remove(os.path.join(GREYLIST_DB, ip))
 
 
 if __name__ == "__main__":

@@ -22,20 +22,23 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-import sys
-import socket
-import syslog
-import signal
 import os
 import re
+import signal
+import socket
 import stat
+import sys
+import syslog
 import time
+
 
 def log(s):
     syslog.syslog(syslog.LOG_INFO, s)
 
+
 def error(s):
     syslog.syslog(syslog.LOG_ERR, s)
+
 
 def query_rbl(ip, rbl_root):
     addr_parts = list(reversed(ip.split('.'))) + [rbl_root]
@@ -48,11 +51,14 @@ def query_rbl(ip, rbl_root):
         log("Found in blacklist %s (resolved to %s)" % (rbl_root, ip))
         return ip
 
+
 def check_rbls(ip):
     """True if the IP is listed in RBLs"""
     return any(query_rbl(ip, r) for r in RBLS)
 
 rxIP = re.compile(r"\[(\d+)\.(\d+)\.(\d+)\.(\d+)\]")
+
+
 def check_badhelo(helo):
     """True if the HELO string violates the RFC"""
     if not CHECK_BAD_HELO:
@@ -64,7 +70,8 @@ def check_badhelo(helo):
             octs = map(int, (m.group(1), m.group(2), m.group(3), m.group(4)))
             if max(octs) < 256:
                 return False
-        log("HELO string begins with '[' but does not contain a valid IPv4 address")
+        log(
+            "HELO string begins with '[' but does not contain a valid IPv4 address")
         return True
 
     if '.' not in helo:
@@ -72,6 +79,7 @@ def check_badhelo(helo):
         return True
 
     return False
+
 
 def check_db(ip):
     """
@@ -86,12 +94,15 @@ def check_db(ip):
         return -1
     return time.time() - s.st_mtime
 
+
 def add_db(ip):
     """Add the specified IP to the GL database"""
     open(GREYLIST_DB + '/' + ip, "w").close()
 
+
 def clean_db(ip):
     os.remove(GREYLIST_DB + '/' + ip)
+
 
 def process_ip(ip, helo):
     if not check_rbls(ip) and not check_badhelo(helo):
@@ -102,7 +113,7 @@ def process_ip(ip, helo):
         log("%s not in greylist DB, adding it" % ip)
         add_db(ip)
         return "defer Are you a spammer? If not, just retry!"
-    elif t < MIN_GREYLIST_TIME*60:
+    elif t < MIN_GREYLIST_TIME * 60:
         log("%s too young in greylist DB" % ip)
         return "defer Are you a spammer? If not, just retry!"
     else:
@@ -115,9 +126,10 @@ def process_one():
     while 1:
         L = sys.stdin.readline()
         L = L.strip()
-        if not L: break
+        if not L:
+            break
         try:
-            k,v = L.split('=',1)
+            k, v = L.split('=', 1)
         except ValueError:
             error("invalid input line: %r" % L)
             sys.exit(2)
@@ -127,7 +139,8 @@ def process_one():
         ip = d['client_address']
         helo = d['helo_name']
     except KeyError:
-        error("client_address/helo_name field not found in input data, aborting")
+        error(
+            "client_address/helo_name field not found in input data, aborting")
         sys.exit(2)
 
     if not ip:
@@ -140,8 +153,8 @@ def process_one():
     log("Action for IP %s: %s" % (ip, action))
     sys.stdout.write('action=%s\n\n' % action)
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     # Allow SIGPIPE to kill our program
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
@@ -177,12 +190,12 @@ if __name__ == "__main__":
         add_db(test_fn)
         check_db(test_fn)
         clean_db(test_fn)
-    except (OSError,IOError):
+    except (OSError, IOError):
         error("Wrong permissions for DB directory: " + GREYLIST_DB)
         sys.exit(2)
 
     if mode == "CLEAN":
-        os.system("find '%s' -type f -mmin +%d -delete" % (GREYLIST_DB, MAX_GREYLIST_TIME))
+        os.system("find '%s' -type f -mmin +%d -delete" %
+                  (GREYLIST_DB, MAX_GREYLIST_TIME))
     else:
         process_one()
-

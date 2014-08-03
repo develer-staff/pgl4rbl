@@ -23,14 +23,14 @@ cd /usr/local
 git clone https://github.com/develersrl/pgl4rbl
 ```
 
-Copy `pgl4rbl.conf` to `/etc/mail`:
+Create the `pgl4rbl` user:
 
 ```sh
-cp /usr/local/pgl4rbl/pgl4rbl.conf /etc/mail
+adduser --home=/var/spool/postfix/pgl4rbl --ingroup=nogroup --shell=/usr/sbin/nologin
 ```
 
-Then, open it and have a look. All defaults are meant to be reasonable and correct, but you are
-welcome to change them if you want.
+Edit the configuration file (`/usr/local/pgl4rbl/pgl4rbl.conf`) as needed. All defaults are meant
+to be reasonable and correct, but you are welcome to change them if you want.
 
 Now, tell Postfix to start pgl4rbl as a service, by editing `/etc/postfix/master.cf` and adding
 this line to it:
@@ -38,7 +38,7 @@ this line to it:
 ```conf
 # greylisting on rbl
 rbl_grey unix  -       n       n       -       0       spawn
-        user=pgl4rbl argv=/usr/bin/python /usr/local/pgl4rbl/pgl4rbl.py
+        user=pgl4rbl argv=/usr/local/pgl4rbl/pgl4rbl.py --config /usr/local/pgl4rbl/pgl4rbl.conf
 ```
 
 Then, in `/etc/postfix/main.cf`, within the section `smptd_recipient_restrictions`, add the

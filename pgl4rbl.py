@@ -148,6 +148,11 @@ def process_ip(ip, helo):
     if not check_rbls(ip) and not check_badhelo(helo):
         return "ok You are cleared to land"
 
+    if STRIP_LAST_BYTE:
+      ip1 = ip
+      ip = ".".join(ip.split('.')[0:3] + ['0'])
+      log("%s stripped to %s" % (ip1, ip))
+
     t = check_db(ip)
 
     if t < 0:

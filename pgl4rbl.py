@@ -26,6 +26,7 @@
 #
 
 import argparse
+import netaddr
 import os
 import os.path
 import re
@@ -141,6 +142,9 @@ def process_one():
 
 
 def process_ip(ip, helo):
+    if check_whitelist(ip):
+        log("%s is whitelisted" % ip)
+        return "ok You are cleared to land"
     if not check_rbls(ip) and not check_badhelo(helo):
         return "ok You are cleared to land"
 
@@ -180,6 +184,18 @@ def query_rbl(ip, rbl_root):
 
         return ip
 
+def check_whitelist(ip):
+    """True if the IP is whitelisted"""
+    if len(GREYLIST_WHITELIST) > 0:
+        wl = open(GREYLIST_WHITELIST)
+        nip = netaddr.IPAddress(ip)
+        for subnet in wl:
+            if nip in netaddr.IPNetwork(subnet):
+                wl.close()
+                return True
+        wl.close()
+
+    return False
 
 def check_badhelo(helo):
     """True if the HELO string violates the RFC"""

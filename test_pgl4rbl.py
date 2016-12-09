@@ -41,6 +41,7 @@ setattr(pgl4rbl, "CHECK_BAD_HELO", CHECK_BAD_HELO)
 setattr(pgl4rbl, "MAX_GREYLIST_TIME", MAX_GREYLIST_TIME)
 setattr(pgl4rbl, "MIN_GREYLIST_TIME", MIN_GREYLIST_TIME)
 setattr(pgl4rbl, "RBLS", RBLS)
+setattr(pgl4rbl, "GREYLIST_WHITELIST", GREYLIST_WHITELIST)
 
 #
 # Tests
